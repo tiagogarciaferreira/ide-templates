@@ -1,0 +1,218 @@
+spring:
+  application:
+    name: app-name
+
+  threads:
+    virtual:
+      enabled: true
+
+  main:
+    keep-alive: true
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+    hikari:
+      pool-name: app-name-pool
+      minimum-idle: 5
+      maximum-pool-size: 10
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      auto-commit: false
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+      leak-detection-threshold: 60000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          fetch_size: 50
+          batch_size: 50
+
+        order_inserts: true
+        order_updates: true
+
+        show_sql: false
+        format_sql: false
+  
+  sql:
+    init:
+      mode: always
+      data-locations: ${SPRING_SQL_INIT_DATA_LOCATIONS}
+
+  flyway:
+    enabled: true
+    locations: ${SPRING_FLYWAY_LOCATIONS}
+
+  mvc:
+    apiversion:
+      default: 1.0
+      detect-supported: true
+      use:
+        header: API-Version
+      supported:
+        - ${API_VERSION}
+    problemdetails:
+      enabled: true
+
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+    datatype:
+      datetime:
+        write-date-keys-as-timestamps: false
+
+  output:
+    ansi:
+      enabled: ALWAYS
+
+  servlet:
+    multipart:
+      enabled: true
+      file-size-threshold: 0B
+      max-file-size: 10MB
+      max-request-size: 12MB
+      location: ${SPRING_SERVLET_MULTIPART_LOCATION}
+      resolve-lazily: true
+
+server:
+  port: ${SERVER_PORT:8080}
+  ssl:
+    enabled: true
+    key-store: ${SSL_KEY_STORE}
+    key-store-password: ${SSL_STORE_PASSWORD}
+    key-store-type: PKCS12
+    key-alias: ${SSL_KEY_ALIAS}
+    protocol: TLS
+
+logging:
+  file:
+    path: ${LOG_PATH:./logs}
+  config: ${LOG_CONFIG_PATH:classpath:logback-spring.xml}
+  level:
+    root: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include:
+          - health
+          - info
+          - prometheus
+
+  endpoint:
+    health:
+      show-details: never
+      show-components: always
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState, diskSpace
+        readiness:
+          include: readinessState, db
+
+    prometheus:
+      access: read_only
+
+    shutdown:
+      access: none
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      environment: ${SPRING_PROFILES_ACTIVE:local}
+      version: ${build.version:unknown}
+
+    enable:
+      jvm: true
+      hikaricp: true
+      jdbc: true
+      spring.data.repository: true
+      http.server.requests: true
+      process: true
+      system: true
+      disk: true
+      logback: true
+
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        "[http.server.requests]": 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s
+
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+        step: 30s
+        descriptions: true
+
+storage:
+  bucket: ${STORAGE_BUCKET_NAME}
+  region: ${STORAGE_REGION_NAME}
+  link-ttl-seconds: ${STORAGE_LINK_TTL_SECONDS:60}
+  endpoint: https://${STORAGE_HOST}:${STORAGE_PORT}
+  access-key: ${STORAGE_ACCESS_KEY}
+  secret-key: ${STORAGE_SECRET_KEY}
+
+security:
+  jwt:
+    issuer: https://${HOSTNAME}
+    audience: https://${HOSTNAME}
+    expiration-seconds: 600
+    public-key: ${JWT_PUBLIC_KEY}
+    private-key: ${JWT_PRIVATE_KEY}
+
+springdoc:
+  api-docs:
+    enabled: true
+    version: openapi-3-1
+
+  packages-to-scan:
+    - 'com.tgfcodes.app.name.application'
+    - 'com.tgfcodes.app.name.presentation'
+
+  show-actuator: false
+  paths-to-match: /api/**
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  model-and-view-allowed: false
+  use-fqn: false
+  remove-broken-reference-definitions: true
+
+  cache:
+    disabled: true
+
+  swagger-ui:
+    path: /docs
+    enabled: true
+    disable-swagger-default-url: true
+    filter: false
+    operationsSorter: method
+    tagsSorter: alpha
+    display-request-duration: true
+    doc-expansion: none
+    persistAuthorization: true
+    displayOperationId: true
+
+    deepLinking: true
+    syntax-highlight:
+      activated: true
+      theme: monokai
+
+    csrf:
+      enabled: true
+      cookie-name: XSRF-TOKEN
+      header-name: X-XSRF-TOKEN
